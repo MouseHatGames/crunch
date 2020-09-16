@@ -31,6 +31,12 @@ typedef signed short crn_int16;
 typedef signed int crn_int32;
 typedef unsigned int crn_bool;
 
+#ifdef TESTFUNCDLL_EXPORT
+#define TESTFUNCDLL_API __declspec(dllexport)
+#else
+#define TESTFUNCDLL_API __declspec(dllimport)
+#endif
+
 // crnlib can compress to these file types.
 enum crn_file_type {
   // .CRN
@@ -92,7 +98,7 @@ enum crn_limits {
   cCRNMaxFaces = 6,
   cCRNMaxLevels = 16,
 
-  cCRNMaxHelperThreads = 15,
+  cCRNMaxHelperThreads = 16,
 
   cCRNMinQualityLevel = 0,
   cCRNMaxQualityLevel = 255
@@ -214,7 +220,7 @@ struct crn_comp_params {
     m_target_bitrate = 0.0f;
     m_quality_level = cCRNMaxQualityLevel;
     m_dxt1a_alpha_threshold = 128;
-    m_dxt_quality = cCRNDXTQualityUber;
+    m_dxt_quality = cCRNDXTQualityNormal;
     m_dxt_compressor_type = cCRNDXTCompressorCRN;
     m_alpha_component = 3;
 
@@ -225,7 +231,7 @@ struct crn_comp_params {
     m_crn_alpha_endpoint_palette_size = 0;
     m_crn_alpha_selector_palette_size = 0;
 
-    m_num_helper_threads = 0;
+    m_num_helper_threads = 10;
     m_userdata0 = 0;
     m_userdata1 = 0;
     m_pProgress_func = NULL;
@@ -508,27 +514,65 @@ typedef void* (*crn_realloc_func)(void* p, size_t size, size_t* pActual_size, bo
 typedef size_t (*crn_msize_func)(void* p, void* pUser_data);
 void crn_set_memory_callbacks(crn_realloc_func pRealloc, crn_msize_func pMSize, void* pUser_data);
 
-// Frees memory blocks allocated by crn_compress(), crn_decompress_crn_to_dds(), or crn_decompress_dds_to_images().
-void crn_free_block(void* pBlock);
+#ifdef TESTFUNCDLL_EXPORT
+#define TESTFUNCDLL_API __declspec(dllexport)
+#else
+#define TESTFUNCDLL_API __declspec(dllimport)
+#endif
 
-// Compresses a 32-bit/pixel texture to either: a regular DX9 DDS file, a "clustered" (or reduced entropy) DX9 DDS file, or a CRN file in memory.
-// Input parameters:
-//  comp_params is the compression parameters struct, defined above.
-//  compressed_size will be set to the size of the returned memory block containing the output file.
-//  The returned block must be freed by calling crn_free_block().
-//  *pActual_quality_level will be set to the actual quality level used to compress the image. May be NULL.
-//  *pActual_bitrate will be set to the output file's effective bitrate, possibly taking into account LZMA compression. May be NULL.
-// Return value:
-//  The compressed file data, or NULL on failure.
-//  compressed_size will be set to the size of the returned memory buffer.
-// Notes:
-//  A "regular" DDS file is compressed using normal DXTn compression at the specified DXT quality level.
-//  A "clustered" DDS file is compressed using clustered DXTn compression to either the target bitrate or the specified integer quality factor.
-//  The output file is a standard DX9 format DDS file, except the compressor assumes you will be later losslessly compressing the DDS output file using the LZMA algorithm.
-//  A texture is defined as an array of 1 or 6 "faces" (6 faces=cubemap), where each "face" consists of between [1,cCRNMaxLevels] mipmap levels.
-//  Mipmap levels are simple 32-bit 2D images with a pitch of width*sizeof(uint32), arranged in the usual raster order (top scanline first).
-//  The image pixels may be grayscale (YYYX bytes in memory), grayscale/alpha (YYYA in memory), 24-bit (RGBX in memory), or 32-bit (RGBA) colors (where "X"=don't care).
-//  RGB color data is generally assumed to be in the sRGB colorspace. If not, be sure to clear the "cCRNCompFlagPerceptual" in the crn_comp_params struct!
+extern "C"
+{
+
+    // Frees memory blocks allocated by crn_compress(), crn_decompress_crn_to_dds(), or crn_decompress_dds_to_images().
+    TESTFUNCDLL_API void crn_free_block(void* pBlock);
+
+    // Compresses a 32-bit/pixel texture to either: a regular DX9 DDS file, a "clustered" (or reduced entropy) DX9 DDS file, or a CRN file in memory.
+    // Input parameters:
+    //  comp_params is the compression parameters struct, defined above.
+    //  compressed_size will be set to the size of the returned memory block containing the output file.
+    //  The returned block must be freed by calling crn_free_block().
+    //  *pActual_quality_level will be set to the actual quality level used to compress the image. May be NULL.
+    //  *pActual_bitrate will be set to the output file's effective bitrate, possibly taking into account LZMA compression. May be NULL.
+    // Return value:
+    //  The compressed file data, or NULL on failure.
+    //  compressed_size will be set to the size of the returned memory buffer.
+    // Notes:
+    //  A "regular" DDS file is compressed using normal DXTn compression at the specified DXT quality level.
+    //  A "clustered" DDS file is compressed using clustered DXTn compression to either the target bitrate or the specified integer quality factor.
+    //  The output file is a standard DX9 format DDS file, except the compressor assumes you will be later losslessly compressing the DDS output file using the LZMA algorithm.
+    //  A texture is defined as an array of 1 or 6 "faces" (6 faces=cubemap), where each "face" consists of between [1,cCRNMaxLevels] mipmap levels.
+    //  Mipmap levels are simple 32-bit 2D images with a pitch of width*sizeof(uint32), arranged in the usual raster order (top scanline first).
+    //  The image pixels may be grayscale (YYYX bytes in memory), grayscale/alpha (YYYA in memory), 24-bit (RGBX in memory), or 32-bit (RGBA) colors (where "X"=don't care).
+    //  RGB color data is generally assumed to be in the sRGB colorspace. If not, be sure to clear the "cCRNCompFlagPerceptual" in the crn_comp_params struct!
+
+ 
+    TESTFUNCDLL_API void* crn_compress(crn_uint32* imagedata,
+        crn_uint32 width,
+        crn_uint32 height,
+        crn_uint32 format,
+        crn_uint32 flags,
+        crn_uint32 quality_level,
+        crn_bool create_mipmaps,
+        crn_uint32& compressed_size,
+        crn_uint32* pActual_quality_level,
+        float* pActual_bitrate);
+
+    TESTFUNCDLL_API void* crn_decompress(
+        const void* pCRN_file_data,
+        crn_uint32& file_size);
+
+    TESTFUNCDLL_API bool crn_decompress_dds_to_images(
+        const void* pDDS_file_data,
+        crn_uint32 dds_file_size,
+        crn_uint32** ppImages,
+        crn_uint32& faces,
+        crn_uint32& levels,
+        crn_uint32& width,
+        crn_uint32& height);
+
+    TESTFUNCDLL_API void crn_free_all_images(crn_uint32** ppImages, crn_uint32 faces, crn_uint32 levels);
+}
+
 void* crn_compress(const crn_comp_params& comp_params, crn_uint32& compressed_size, crn_uint32* pActual_quality_level = NULL, float* pActual_bitrate = NULL);
 
 // Like the above function, except this function can also do things like generate mipmaps, and resize or crop the input texture before compression.
@@ -553,9 +597,6 @@ struct crn_texture_desc {
   crn_uint32 m_fmt_fourcc;  // Same as crnlib::pixel_format
 };
 bool crn_decompress_dds_to_images(const void* pDDS_file_data, crn_uint32 dds_file_size, crn_uint32** ppImages, crn_texture_desc& tex_desc);
-
-// Frees all images allocated by crn_decompress_dds_to_images().
-void crn_free_all_images(crn_uint32** ppImages, const crn_texture_desc& desc);
 
 // -------- crn_format related helpers functions.
 
