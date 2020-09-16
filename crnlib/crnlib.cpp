@@ -1,5 +1,5 @@
 // File: crnlib.cpp
-// See Copyright Notice and license at the end of inc/crnlib.h
+// This software is in the public domain. Please see license.txt.
 #include "crn_core.h"
 #include "../inc/crnlib.h"
 #include "crn_comp.h"
@@ -405,6 +405,7 @@ bool crn_decompress_block(const void *pSrc_block, crn_uint32 *pDst_pixels_u32, c
             pDst_pixels[i] = colors[s];
             pDst_pixels[i].a = static_cast<uint8>(values[a]);
          }
+		 break;
       }
 
       case cCRNFmtDXN_XY:
