@@ -1,3 +1,6 @@
+.DEFAULT_GOAL := all
+.PHONY: all clean
+
 COMPILE_OPTIONS = -O3 -fomit-frame-pointer -ffast-math -fno-math-errno -g -fno-strict-aliasing -Wall -Wno-unused-value -Wno-unused -march=core2
 LINKER_OPTIONS = -lpthread -g
 
@@ -51,7 +54,6 @@ OBJECTS = \
   crn_utils.o \
   crn_value.o \
   crn_vector.o \
-  crn_zeng.o \
   crn_texture_comp.o \
   crn_texture_conversion.o \
   crn_dds_comp.o \
@@ -94,3 +96,5 @@ corpus_test.o: ../crunch/corpus_test.cpp
 crunch: $(OBJECTS) crunch.o corpus_gen.o corpus_test.o
 	g++ $(OBJECTS) crunch.o corpus_gen.o corpus_test.o -o crunch $(LINKER_OPTIONS)
 
+clean:
+	rm $(OBJECTS) crunch.o corpus_gen.o corpus_test.o crunch

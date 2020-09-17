@@ -1,3 +1,9 @@
+**Daemon fork of crunch: The Daemon engine uses the *master* branch, which currently tracks the
+[Unity fork](https://github.com/Unity-Technologies/crunch/tree/unity), with a few additional
+minor fixes.**
+
+---
+
 crunch/crnlib v1.04 - Advanced DXTn texture compression library
 
 Public Domain - Please see license.txt. 

@@ -18,6 +18,11 @@
 #include <stdio.h>
 #ifdef WIN32
 #include <memory.h>
+#elif defined(__APPLE__)
+#include <malloc/malloc.h>
+#elif defined(__FreeBSD__)
+// <malloc.h> has been replaced by <stdlib.h>
+#include <malloc_np.h> // for malloc_usable_size
 #else
 #include <malloc.h>
 #endif
@@ -129,13 +134,15 @@ void crnd_fail(const char* pExp, const char* pFile, unsigned line);
 namespace crnd {
 void crnd_assert(const char* pExp, const char* pFile, unsigned line);
 
+// Define CRND_ASSERT if there is no user-supplied definition.
+// Note that if there is a user-supplied definition, it is used even if NDEBUG is defined.
+#ifndef CRND_ASSERT
 #ifdef NDEBUG
 #define CRND_ASSERT(x) ((void)0)
-#undef CRND_ASSERTS_ENABLED
 #else
 #define CRND_ASSERT(_exp) (void)((!!(_exp)) || (crnd::crnd_assert(#_exp, __FILE__, __LINE__), 0))
-#define CRND_ASSERTS_ENABLED
 #endif
+#endif // ifndef CRND_ASSERT
 
 void crnd_trace(const char* pFmt, va_list args);
 void crnd_trace(const char* pFmt, ...);
@@ -1924,6 +1931,8 @@ static void* crnd_default_realloc(void* p, size_t size, size_t* pActual_size, bo
     if (pActual_size) {
 #ifdef WIN32
       *pActual_size = p_new ? ::_msize(p_new) : 0;
+#elif defined(__APPLE__)
+      *pActual_size = p_new ? malloc_size(p_new) : 0;
 #else
       *pActual_size = p_new ? malloc_usable_size(p_new) : 0;
 #endif
@@ -1954,6 +1963,8 @@ static void* crnd_default_realloc(void* p, size_t size, size_t* pActual_size, bo
     if (pActual_size) {
 #ifdef WIN32
       *pActual_size = ::_msize(p_final_block);
+#elif defined(__APPLE__)
+      *pActual_size = ::malloc_size(p_final_block);
 #else
       *pActual_size = ::malloc_usable_size(p_final_block);
 #endif
@@ -1964,9 +1975,11 @@ static void* crnd_default_realloc(void* p, size_t size, size_t* pActual_size, bo
 }
 
 static size_t crnd_default_msize(void* p, void* pUser_data) {
-  pUser_data;
+  (void)pUser_data;
 #ifdef WIN32
   return p ? _msize(p) : 0;
+#elif defined(__APPLE__)
+  return p ? malloc_size(p) : 0;
 #else
   return p ? malloc_usable_size(p) : 0;
 #endif
@@ -3334,8 +3347,8 @@ class crn_unpacker {
 
   bool unpack_dxt1(uint8** pDst, uint32 output_pitch_in_bytes, uint32 output_width, uint32 output_height) {
     const uint32 num_color_endpoints = m_color_endpoints.size();
-    const uint32 width = output_width + 1 & ~1;
-    const uint32 height = output_height + 1 & ~1;
+    const uint32 width = (output_width + 1) & ~1;
+    const uint32 height = (output_height + 1) & ~1;
     const int32 delta_pitch_in_dwords = (output_pitch_in_bytes >> 2) - (width << 1);
 
     if (m_block_buffer.size() < width)
@@ -3386,8 +3399,8 @@ class crn_unpacker {
   bool unpack_dxt5(uint8** pDst, uint32 row_pitch_in_bytes, uint32 output_width, uint32 output_height) {
     const uint32 num_color_endpoints = m_color_endpoints.size();
     const uint32 num_alpha_endpoints = m_alpha_endpoints.size();
-    const uint32 width = output_width + 1 & ~1;
-    const uint32 height = output_height + 1 & ~1;
+    const uint32 width = (output_width + 1) & ~1;
+    const uint32 height = (output_height + 1) & ~1;
     const int32 delta_pitch_in_dwords = (row_pitch_in_bytes >> 2) - (width << 2);
 
     if (m_block_buffer.size() < width)
@@ -3448,8 +3461,8 @@ class crn_unpacker {
 
   bool unpack_dxn(uint8** pDst, uint32 row_pitch_in_bytes, uint32 output_width, uint32 output_height) {
     const uint32 num_alpha_endpoints = m_alpha_endpoints.size();
-    const uint32 width = output_width + 1 & ~1;
-    const uint32 height = output_height + 1 & ~1;
+    const uint32 width = (output_width + 1) & ~1;
+    const uint32 height = (output_height + 1) & ~1;
     const int32 delta_pitch_in_dwords = (row_pitch_in_bytes >> 2) - (width << 2);
 
     if (m_block_buffer.size() < width)
@@ -3511,8 +3524,8 @@ class crn_unpacker {
 
   bool unpack_dxt5a(uint8** pDst, uint32 row_pitch_in_bytes, uint32 output_width, uint32 output_height) {
     const uint32 num_alpha_endpoints = m_alpha_endpoints.size();
-    const uint32 width = output_width + 1 & ~1;
-    const uint32 height = output_height + 1 & ~1;
+    const uint32 width = (output_width + 1) & ~1;
+    const uint32 height = (output_height + 1) & ~1;
     const int32 delta_pitch_in_dwords = (row_pitch_in_bytes >> 2) - (width << 1);
 
     if (m_block_buffer.size() < width)
@@ -3563,8 +3576,8 @@ class crn_unpacker {
 
   bool unpack_etc1(uint8** pDst, uint32 output_pitch_in_bytes, uint32 output_width, uint32 output_height) {
     const uint32 num_color_endpoints = m_color_endpoints.size();
-    const uint32 width = output_width + 1 & ~1;
-    const uint32 height = output_height + 1 & ~1;
+    const uint32 width = (output_width + 1) & ~1;
+    const uint32 height = (output_height + 1) & ~1;
     const int32 delta_pitch_in_dwords = (output_pitch_in_bytes >> 2) - (width << 1);
 
     if (m_block_buffer.size() < width << 1)
@@ -3630,8 +3643,8 @@ class crn_unpacker {
   bool unpack_etc2a(uint8** pDst, uint32 output_pitch_in_bytes, uint32 output_width, uint32 output_height) {
     const uint32 num_color_endpoints = m_color_endpoints.size();
     const uint32 num_alpha_endpoints = m_alpha_endpoints.size();
-    const uint32 width = output_width + 1 & ~1;
-    const uint32 height = output_height + 1 & ~1;
+    const uint32 width = (output_width + 1) & ~1;
+    const uint32 height = (output_height + 1) & ~1;
     const int32 delta_pitch_in_dwords = (output_pitch_in_bytes >> 2) - (width << 2);
 
     if (m_block_buffer.size() < width << 1)
