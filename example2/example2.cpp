@@ -5,7 +5,7 @@
 // This is the basic functionality a game engine would need to employ at runtime to utilize
 // .CRN textures (excluding writing the output DDS file - instead you would provide the DXTn
 // bits directly to OpenGL/D3D).
-// See Copyright Notice and license at the end of inc/crnlib.h
+// This software is in the public domain. Please see license.txt.
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>

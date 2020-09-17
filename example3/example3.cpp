@@ -3,7 +3,7 @@
 // so it's not going to be fast.
 // Also note that this sample only demonstrates traditional/vanilla 4x4 DXTn block compression (not CRN).
 
-// See Copyright Notice and license at the end of inc/crnlib.h
+// This software is in the public domain. Please see license.txt.
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
