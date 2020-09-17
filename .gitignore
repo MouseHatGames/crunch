@@ -16,3 +16,4 @@
 /bin/*
 !bin/crunch_x64.exe
 /build
+/.vs
